@@ -10,6 +10,7 @@
 #import "TZImagePickerController.h"
 #import "TZPhotoPickerController.h"
 #import "TZPhotoPreviewController.h"
+#import "TZWebPhotoPreviewController.h"
 #import "TZAssetModel.h"
 #import "TZAssetCell.h"
 #import "UIView+Layout.h"
@@ -199,6 +200,36 @@
         [self configDefaultSetting];
         
         previewVc.photos = [NSMutableArray arrayWithArray:selectedPhotos];
+        previewVc.currentIndex = index;
+        __weak typeof(self) weakSelf = self;
+        [previewVc setDoneButtonClickBlockWithPreviewType:^(NSArray<UIImage *> *photos, NSArray *assets, BOOL isSelectOriginalPhoto) {
+            [weakSelf dismissViewControllerAnimated:YES completion:^{
+                if (weakSelf.didFinishPickingPhotosHandle) {
+                    weakSelf.didFinishPickingPhotosHandle(photos,assets,isSelectOriginalPhoto);
+                }
+            }];
+        }];
+    }
+    return self;
+}
+
+/// This init method just for previewing photo by url / 用这个初始化方法以预览网络图片
+- (instancetype)initWithSelectedPhotos:(NSMutableArray *)selectedPhotos index:(NSInteger)index{
+    TZWebPhotoPreviewController *previewVc = [[TZWebPhotoPreviewController alloc] init];
+    self = [super initWithRootViewController:previewVc];
+    if (self) {
+        NSMutableArray *models = [[NSMutableArray alloc] init];
+        for (UIImage *image in selectedPhotos) {
+            TZWebPhotoModel *model = [[TZWebPhotoModel alloc] init];
+            model.photo = image;
+            model.isSelected = YES;
+            [models addObject:model];
+        }
+        self.selectedModels = models;
+        self.allowPickingOriginalPhoto = NO;
+        [self configDefaultSetting];
+        
+        previewVc.photos = selectedPhotos;
         previewVc.currentIndex = index;
         __weak typeof(self) weakSelf = self;
         [previewVc setDoneButtonClickBlockWithPreviewType:^(NSArray<UIImage *> *photos, NSArray *assets, BOOL isSelectOriginalPhoto) {
